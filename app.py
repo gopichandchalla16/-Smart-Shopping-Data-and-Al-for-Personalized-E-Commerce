@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import ast  # To parse string lists in Browsing_History and Purchase_History
 
 # -------------------------------
-# Load Data with Error Handling
+# Load Data with Fallback
 # -------------------------------
 @st.cache_data
 def load_data():
@@ -12,7 +13,7 @@ def load_data():
         products = pd.read_csv("products.csv")
         
         # Define required columns
-        required_customer_cols = ['CustomerName', 'Age', 'Gender', 'Interests']
+        required_customer_cols = ['Customer_ID', 'Age', 'Gender', 'Browsing_History']
         required_product_cols = ['ProductName', 'Category', 'Price', 'Description']
         
         # Check for missing columns in customers.csv
@@ -25,48 +26,64 @@ def load_data():
         if missing_product_cols:
             raise ValueError(f"Missing required columns in products.csv: {', '.join(missing_product_cols)}")
         
+        # Convert string lists to actual lists
+        customers['Browsing_History'] = customers['Browsing_History'].apply(ast.literal_eval)
         return customers, products
     
     except FileNotFoundError as e:
-        st.error(f"🚫 Data file not found: {str(e)}. Please ensure 'customers.csv' and 'products.csv' are present.")
-        return None, None
+        st.warning(f"🚫 Data file not found: {str(e)}. Using sample data instead.")
+        customers_data = {
+            'Customer_ID': ['C1000', 'C1001', 'C1002'],
+            'Age': [28, 27, 34],
+            'Gender': ['Female', 'Male', 'Other'],
+            'Browsing_History': [['Books', 'Fashion'], ['Books', 'Fitness', 'Fashion'], ['Electronics']]
+        }
+        products_data = {
+            'ProductName': ['Biography Book', 'Trendy Jeans', 'Smartphone'],
+            'Category': ['Books', 'Fashion', 'Electronics'],
+            'Price': [19.99, 59.99, 299.99],
+            'Description': ['Engaging biography', 'Stylish jeans', 'Latest smartphone']
+        }
+        return pd.DataFrame(customers_data), pd.DataFrame(products_data)
+    
     except ValueError as e:
         st.error(f"🚫 Data validation error: {str(e)}")
-        return None, None
-    except Exception as e:
-        st.error(f"🚫 Unexpected error loading data: {str(e)}")
-        return None, None
+        st.markdown("Falling back to sample data.")
+        customers_data = {
+            'Customer_ID': ['C1000', 'C1001', 'C1002'],
+            'Age': [28, 27, 34],
+            'Gender': ['Female', 'Male', 'Other'],
+            'Browsing_History': [['Books', 'Fashion'], ['Books', 'Fitness', 'Fashion'], ['Electronics']]
+        }
+        products_data = {
+            'ProductName': ['Biography Book', 'Trendy Jeans', 'Smartphone'],
+            'Category': ['Books', 'Fashion', 'Electronics'],
+            'Price': [19.99, 59.99, 299.99],
+            'Description': ['Engaging biography', 'Stylish jeans', 'Latest smartphone']
+        }
+        return pd.DataFrame(customers_data), pd.DataFrame(products_data)
 
 # -------------------------------
 # Recommend Products
 # -------------------------------
 def recommend_products(customer, products_df):
     try:
-        interests = customer['Interests'].split('|')
-        # Case-insensitive matching
+        interests = customer['Browsing_History']  # Already a list from ast.literal_eval
         recommendations = products_df[products_df['Category'].str.lower().isin([i.lower() for i in interests])]
-        
-        # Fallback if no matches
         if recommendations.empty:
-            recommendations = products_df.sample(3)  # Random 3 products as fallback
-        return recommendations.head(3)  # Limit to 3 recommendations
+            recommendations = products_df.sample(3)
+        return recommendations.head(3)
     except Exception as e:
-        st.error(f"🚫 Error generating recommendations: {str(e)}")
-        return pd.DataFrame()  # Return empty DataFrame on error
+        st.error(f"🚫 Recommendation error: {str(e)}")
+        return products_df.sample(3)
 
 # -------------------------------
 # Streamlit UI
 # -------------------------------
 def main():
-    # Page Configuration
-    st.set_page_config(
-        page_title="Smart Shopping",
-        page_icon="🛍️",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-
-    # Custom CSS for enhanced UI
+    st.set_page_config(page_title="Smart Shopping", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+    
+    # Custom CSS
     st.markdown("""
     <style>
     .main {background-color: #f9f9f9;}
@@ -83,21 +100,17 @@ def main():
 
     # Load Data
     customers_df, products_df = load_data()
-    if customers_df is None or products_df is None:
-        st.markdown("### Please fix the data files and restart the app.")
-        return
 
     # Sidebar
     with st.sidebar:
         st.header("📋 Select Customer")
-        customer_names = customers_df['CustomerName'].tolist()
-        selected_name = st.selectbox("Choose a Customer", customer_names, key="customer_select")
-        
+        customer_ids = customers_df['Customer_ID'].tolist()
+        selected_id = st.selectbox("Choose a Customer", customer_ids, key="customer_select")
         st.markdown("---")
-        st.info("Select a customer to view their profile and get tailored recommendations.")
+        st.info("Select a customer to see their profile and recommendations.")
 
     # Main Content
-    selected_customer = customers_df[customers_df['CustomerName'] == selected_name].iloc[0]
+    selected_customer = customers_df[customers_df['Customer_ID'] == selected_id].iloc[0]
     
     col1, col2 = st.columns([1, 2], gap="medium")
     
@@ -105,10 +118,10 @@ def main():
         st.subheader("👤 Customer Profile")
         with st.expander("View Details", expanded=True):
             st.markdown(f"""
-            **Name:** {selected_customer['CustomerName']}  
+            **Customer ID:** {selected_customer['Customer_ID']}  
             **Age:** {selected_customer['Age']}  
             **Gender:** {selected_customer['Gender']}  
-            **Interests:** {selected_customer['Interests'].replace('|', ', ')}
+            **Interests:** {', '.join(selected_customer['Browsing_History'])}
             """)
     
     with col2:
@@ -127,7 +140,7 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
         else:
-            st.warning("No recommendations available. Showing random products instead.")
+            st.warning("No recommendations available.")
 
 if __name__ == "__main__":
     main()
