@@ -4,13 +4,9 @@ import ast
 import plotly.express as px
 from io import StringIO
 
-# -------------------------------
-# Load Data with Fallback
-# -------------------------------
 @st.cache_data
 def load_data():
     try:
-        # Customer Data
         customers_data = """
 Customer_ID,Age,Gender,Location,Browsing_History,Purchase_History,Customer_Segment,Avg_Order_Value,Holiday,Season
 C1000,28,Female,Chennai,"['Books', 'Fashion']","['Biography', 'Jeans']",New Visitor,4806.99,No,Winter
@@ -19,7 +15,6 @@ C1002,34,Other,Chennai,['Electronics'],['Smartphone'],Occasional Shopper,1742.45
 """
         customers = pd.read_csv(StringIO(customers_data))
 
-        # Product Data
         products_data = """
 Product_ID,Category,Subcategory,Price,Brand,Average_Rating_of_Similar_Products,Product_Rating,Customer_Review_Sentiment_Score,Holiday,Season,Geographical_Location,Similar_Product_List,Probability_of_Recommendation
 P2000,Fashion,Jeans,1713,Brand B,4.2,2.3,0.26,No,Summer,Canada,"['Jeans', 'Shoes']",0.91
@@ -27,8 +22,6 @@ P2001,Beauty,Lipstick,1232,Brand C,4.7,2.1,0.21,Yes,Winter,India,"['Moisturizer'
 P2002,Electronics,Laptop,4833,Brand B,3.5,2.4,0.74,Yes,Spring,Canada,"['Headphones', 'Headphones', 'Smartphone']",0.6
 """
         products = pd.read_csv(StringIO(products_data))
-
-        # Convert string lists to actual lists
         customers['Browsing_History'] = customers['Browsing_History'].apply(ast.literal_eval)
         customers['Purchase_History'] = customers['Purchase_History'].apply(ast.literal_eval)
         products['Similar_Product_List'] = products['Similar_Product_List'].apply(ast.literal_eval)
@@ -62,9 +55,6 @@ P2002,Electronics,Laptop,4833,Brand B,3.5,2.4,0.74,Yes,Spring,Canada,"['Headphon
         }
         return pd.DataFrame(customers_data), pd.DataFrame(products_data)
 
-# -------------------------------
-# Recommend Products
-# -------------------------------
 def recommend_products(customer, products_df, min_price, max_price):
     interests = set(customer['Browsing_History'] + customer['Purchase_History'])
     recommendations = products_df[
@@ -78,9 +68,6 @@ def recommend_products(customer, products_df, min_price, max_price):
         recommendations = pd.concat([recommendations, additional])
     return recommendations.head(3)
 
-# -------------------------------
-# Sentiment Insight
-# -------------------------------
 def get_sentiment_insight(score):
     if score >= 0.7:
         return "Highly Positive Reviews 😊"
@@ -89,9 +76,6 @@ def get_sentiment_insight(score):
     else:
         return "Mixed or Negative Reviews 😐"
 
-# -------------------------------
-# Visualizations
-# -------------------------------
 def plot_segment_distribution(customers_df):
     fig = px.pie(customers_df, names='Customer_Segment', title='Customer Segment Distribution',
                  color_discrete_sequence=px.colors.sequential.RdBu)
@@ -114,39 +98,43 @@ def plot_customer_spending(customer, customers_df):
     fig.add_hline(y=customer['Avg_Order_Value'], line_dash="dash", line_color="red", annotation_text="Your Avg Spending")
     return fig
 
-# -------------------------------
-# Streamlit UI
-# -------------------------------
 def main():
     st.set_page_config(page_title="Smart Shopping Hub", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
 
-    # Custom CSS with Updated Colors
     st.markdown("""
     <style>
-    .main {background-color: #f0f2f6;}
-    .stButton>button {background-color: #4CAF50; color: white; border-radius: 8px; padding: 10px;}
-    .product-card {background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;}
-    .sidebar .sidebar-content {background-color: #ffffff; padding: 15px; border-radius: 10px;}
+    .main {background-color: #f8f9fa;}
+    .stButton>button {background-color: #2e86de; color: white; border-radius: 8px; padding: 10px;}
+    .product-card {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-bottom: 20px;
+        border-left: 5px solid #2e86de;
+    }
+    .sidebar .sidebar-content {
+        background-color: #f0f0f5;
+        padding: 15px;
+        border-radius: 10px;
+    }
     .tab {font-size: 18px; font-weight: bold; padding: 10px;}
-    .price {color: #27ae60; font-weight: bold;}
-    .score {color: #2980b9; font-weight: bold;}
+    .price {color: #16a085; font-weight: bold;}
+    .score {color: #2c3e50; font-weight: bold;}
     .holiday {color: #c0392b; font-weight: bold;}
     .rating {color: #d35400; font-weight: bold;}
     .label {color: #2c3e50; font-weight: bold;}
     .insight {color: #8e44ad; font-style: italic;}
-    .detail {color: #1a1a1a; font-weight: normal;} /* Very Dark Gray for Details */
+    .detail {color: #34495e; font-weight: normal;}
     </style>
     """, unsafe_allow_html=True)
 
-    # Header
     st.title("🛍️ Smart Shopping Hub")
     st.subheader("Your AI-Powered Shopping Companion")
     st.markdown("Explore personalized recommendations, insights, and more!")
 
-    # Load Data
     customers_df, products_df = load_data()
 
-    # Sidebar
     with st.sidebar:
         st.header("🔍 Filters")
         customer_ids = customers_df['Customer_ID'].tolist()
@@ -160,7 +148,6 @@ def main():
         st.markdown("---")
         st.info("Customize your experience with filters and explore insights!")
 
-    # Filter Data with Fallback
     filtered_customers = customers_df[
         (customers_df['Location'].isin(location_filter)) &
         (customers_df['Season'].isin(season_filter))
@@ -175,7 +162,6 @@ def main():
             return
     selected_customer = selected_customer_df.iloc[0]
 
-    # Tabs
     tab1, tab2, tab3 = st.tabs(["Recommendations", "Profile", "Insights"])
 
     with tab1:
