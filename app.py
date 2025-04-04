@@ -110,11 +110,11 @@ def main():
     .product-card {background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .sidebar .sidebar-content {background-color: #ffffff; padding: 15px; border-radius: 10px;}
     .tab {font-size: 18px; font-weight: bold; padding: 10px;}
-    .price {color: #2ecc71; font-weight: bold;} /* Green for price */
-    .score {color: #3498db; font-weight: bold;} /* Blue for recommendation score */
-    .holiday {color: #e74c3c; font-weight: bold;} /* Red for holiday tag */
-    .rating {color: #f39c12; font-weight: bold;} /* Orange for ratings */
-    .label {color: #34495e; font-weight: bold;} /* Dark slate for labels */
+    .price {color: #2ecc71; font-weight: bold;}
+    .score {color: #3498db; font-weight: bold;}
+    .holiday {color: #e74c3c; font-weight: bold;}
+    .rating {color: #f39c12; font-weight: bold;}
+    .label {color: #34495e; font-weight: bold;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -136,12 +136,21 @@ def main():
         st.markdown("---")
         st.info("Customize your experience with filters and explore insights!")
 
-    # Filter Data
+    # Filter Data with Fallback
     filtered_customers = customers_df[
         (customers_df['Location'].isin(location_filter)) &
         (customers_df['Season'].isin(season_filter))
     ]
-    selected_customer = filtered_customers[filtered_customers['Customer_ID'] == selected_id].iloc[0]
+    
+    # Check if selected customer exists in filtered data
+    selected_customer_df = filtered_customers[filtered_customers['Customer_ID'] == selected_id]
+    if selected_customer_df.empty:
+        st.warning(f"⚠️ Customer {selected_id} not found in filtered data. Showing unfiltered customer data.")
+        selected_customer_df = customers_df[customers_df['Customer_ID'] == selected_id]
+        if selected_customer_df.empty:
+            st.error(f"🚫 Customer {selected_id} not found in the dataset. Please select a valid customer.")
+            return
+    selected_customer = selected_customer_df.iloc[0]
 
     # Tabs
     tab1, tab2, tab3 = st.tabs(["Recommendations", "Profile", "Insights"])
