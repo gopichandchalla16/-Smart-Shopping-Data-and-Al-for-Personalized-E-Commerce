@@ -7,40 +7,52 @@ import pandas as pd
 @st.cache_data
 def load_data():
     try:
+        # Load customer data
         customers = pd.read_csv("customers.csv")
         products = pd.read_csv("products.csv")
-        # Verify required columns exist
+        
+        # Define required columns
         required_customer_cols = ['CustomerName', 'Age', 'Gender', 'Interests']
         required_product_cols = ['ProductName', 'Category', 'Price', 'Description']
         
-        if not all(col in customers.columns for col in required_customer_cols):
-            raise ValueError("Missing required columns in customers.csv")
-        if not all(col in products.columns for col in required_product_cols):
-            raise ValueError("Missing required columns in products.csv")
-            
+        # Check for missing columns in customers.csv
+        missing_customer_cols = [col for col in required_customer_cols if col not in customers.columns]
+        if missing_customer_cols:
+            raise ValueError(f"Missing required columns in customers.csv: {', '.join(missing_customer_cols)}")
+        
+        # Check for missing columns in products.csv
+        missing_product_cols = [col for col in required_product_cols if col not in products.columns]
+        if missing_product_cols:
+            raise ValueError(f"Missing required columns in products.csv: {', '.join(missing_product_cols)}")
+        
         return customers, products
-    except FileNotFoundError:
-        st.error("🚫 Data files 'customers.csv' or 'products.csv' not found!")
+    
+    except FileNotFoundError as e:
+        st.error(f"🚫 Data file not found: {str(e)}. Please ensure 'customers.csv' and 'products.csv' are present.")
+        return None, None
+    except ValueError as e:
+        st.error(f"🚫 Data validation error: {str(e)}")
         return None, None
     except Exception as e:
-        st.error(f"🚫 Error loading data: {str(e)}")
+        st.error(f"🚫 Unexpected error loading data: {str(e)}")
         return None, None
 
 # -------------------------------
 # Recommend Products
 # -------------------------------
 def recommend_products(customer, products_df):
-    interests = customer['Interests'].split('|')
-    # Filter products by interest, case-insensitive
-    recommendations = products_df[products_df['Category'].str.lower().isin([i.lower() for i in interests])]
-    
-    # If no matches, return top 3 highest-rated or random products
-    if recommendations.empty:
-        if 'Rating' in products_df.columns:
-            recommendations = products_df.nlargest(3, 'Rating')
-        else:
-            recommendations = products_df.sample(3)
-    return recommendations.head(3)  # Limit to 3 recommendations
+    try:
+        interests = customer['Interests'].split('|')
+        # Case-insensitive matching
+        recommendations = products_df[products_df['Category'].str.lower().isin([i.lower() for i in interests])]
+        
+        # Fallback if no matches
+        if recommendations.empty:
+            recommendations = products_df.sample(3)  # Random 3 products as fallback
+        return recommendations.head(3)  # Limit to 3 recommendations
+    except Exception as e:
+        st.error(f"🚫 Error generating recommendations: {str(e)}")
+        return pd.DataFrame()  # Return empty DataFrame on error
 
 # -------------------------------
 # Streamlit UI
@@ -54,13 +66,13 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # Custom CSS for better UI
+    # Custom CSS for enhanced UI
     st.markdown("""
     <style>
-    .main {background-color: #f5f5f5;}
-    .stButton>button {background-color: #4CAF50; color: white; border-radius: 5px;}
-    .product-card {background-color: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-    .sidebar .sidebar-content {background-color: #fafafa;}
+    .main {background-color: #f9f9f9;}
+    .stButton>button {background-color: #007bff; color: white; border-radius: 8px;}
+    .product-card {background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 15px;}
+    .sidebar .sidebar-content {background-color: #f0f0f0;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -72,6 +84,7 @@ def main():
     # Load Data
     customers_df, products_df = load_data()
     if customers_df is None or products_df is None:
+        st.markdown("### Please fix the data files and restart the app.")
         return
 
     # Sidebar
@@ -81,7 +94,7 @@ def main():
         selected_name = st.selectbox("Choose a Customer", customer_names, key="customer_select")
         
         st.markdown("---")
-        st.info("Select a customer to see their profile and personalized recommendations.")
+        st.info("Select a customer to view their profile and get tailored recommendations.")
 
     # Main Content
     selected_customer = customers_df[customers_df['CustomerName'] == selected_name].iloc[0]
@@ -113,9 +126,8 @@ def main():
                         <p><b>Description:</b> {product['Description']}</p>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.markdown("---")
         else:
-            st.warning("No recommendations available at this time.")
+            st.warning("No recommendations available. Showing random products instead.")
 
 if __name__ == "__main__":
     main()
