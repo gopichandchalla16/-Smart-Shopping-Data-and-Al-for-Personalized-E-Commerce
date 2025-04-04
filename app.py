@@ -128,12 +128,13 @@ def main():
     .product-card {background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .sidebar .sidebar-content {background-color: #ffffff; padding: 15px; border-radius: 10px;}
     .tab {font-size: 18px; font-weight: bold; padding: 10px;}
-    .price {color: #27ae60; font-weight: bold;} /* Darker Green for Price */
-    .score {color: #2980b9; font-weight: bold;} /* Darker Blue for Score */
-    .holiday {color: #c0392b; font-weight: bold;} /* Darker Red for Holiday */
-    .rating {color: #d35400; font-weight: bold;} /* Darker Orange for Ratings */
-    .label {color: #2c3e50; font-weight: bold;} /* Darker Slate for Labels */
-    .insight {color: #8e44ad; font-style: italic;} /* Purple for Insights */
+    .price {color: #27ae60; font-weight: bold;}
+    .score {color: #2980b9; font-weight: bold;}
+    .holiday {color: #c0392b; font-weight: bold;}
+    .rating {color: #d35400; font-weight: bold;}
+    .label {color: #2c3e50; font-weight: bold;}
+    .insight {color: #8e44ad; font-style: italic;}
+    .detail {color: #1a1a1a; font-weight: normal;} /* Very Dark Gray for Details */
     </style>
     """, unsafe_allow_html=True)
 
@@ -207,16 +208,16 @@ def main():
         st.subheader("👤 Customer Profile")
         with st.expander("View Details", expanded=True):
             st.markdown(f"""
-            <p><span class="label">Customer ID:</span> {selected_customer['Customer_ID']}</p>
-            <p><span class="label">Age:</span> {selected_customer['Age']}</p>
-            <p><span class="label">Gender:</span> {selected_customer['Gender']}</p>
-            <p><span class="label">Location:</span> {selected_customer['Location']}</p>
-            <p><span class="label">Interests:</span> {', '.join(selected_customer['Browsing_History'])}</p>
-            <p><span class="label">Past Purchases:</span> {', '.join(selected_customer['Purchase_History'])}</p>
-            <p><span class="label">Segment:</span> {selected_customer['Customer_Segment']}</p>
+            <p><span class="label">Customer ID:</span> <span class="detail">{selected_customer['Customer_ID']}</span></p>
+            <p><span class="label">Age:</span> <span class="detail">{selected_customer['Age']}</span></p>
+            <p><span class="label">Gender:</span> <span class="detail">{selected_customer['Gender']}</span></p>
+            <p><span class="label">Location:</span> <span class="detail">{selected_customer['Location']}</span></p>
+            <p><span class="label">Interests:</span> <span class="detail">{', '.join(selected_customer['Browsing_History'])}</span></p>
+            <p><span class="label">Past Purchases:</span> <span class="detail">{', '.join(selected_customer['Purchase_History'])}</span></p>
+            <p><span class="label">Segment:</span> <span class="detail">{selected_customer['Customer_Segment']}</span></p>
             <p><span class="label">Avg Order Value:</span> <span class="price">${selected_customer['Avg_Order_Value']:.2f}</span></p>
-            <p><span class="label">Holiday Shopper:</span> {selected_customer['Holiday']}</p>
-            <p><span class="label">Season:</span> {selected_customer['Season']}</p>
+            <p><span class="label">Holiday Shopper:</span> <span class="detail">{selected_customer['Holiday']}</span></p>
+            <p><span class="label">Season:</span> <span class="detail">{selected_customer['Season']}</span></p>
             """, unsafe_allow_html=True)
 
     with tab3:
