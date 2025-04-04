@@ -1,68 +1,58 @@
 import streamlit as st
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
-# -----------------------------
-# Load Data (Cached for Speed)
-# -----------------------------
+# -------------------------------
+# Load Data
+# -------------------------------
+
 @st.cache_data
 def load_data():
-    customer_df = pd.read_csv("data/customers.csv")
-    product_df = pd.read_csv("data/products.csv")
-    return customer_df, product_df
+    customers = pd.read_csv("customers.csv")
+    products = pd.read_csv("products.csv")
+    return customers, products
 
-# -----------------------------
-# Recommend Products Function
-# -----------------------------
-def recommend_products(customer_profile, product_descriptions, top_n=3):
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([customer_profile] + product_descriptions)
-    cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
-    top_indices = cosine_similarities.argsort()[::-1][:top_n]
-    return top_indices, cosine_similarities
+# -------------------------------
+# Recommend Products
+# -------------------------------
 
-# -----------------------------
-# Streamlit App UI
-# -----------------------------
+def recommend_products(customer, products_df):
+    interests = customer['interests'].split('|')
+    recommendations = products_df[products_df['category'].isin(interests)]
+    
+    if recommendations.empty:
+        recommendations = products_df.sample(3)
+    
+    return recommendations
+
+# -------------------------------
+# Streamlit UI
+# -------------------------------
+
 def main():
-    st.set_page_config(page_title="Smart Shopping: AI Product Recommender", layout="wide")
-    st.title("🛍️ Smart Shopping: AI-Based Product Recommender")
-    st.markdown("""
-        This AI-powered app recommends personalized products based on customer interests and behavior.
-        Select a customer to see what they'd love! 🔍
-    """)
-
+    st.set_page_config(page_title="Smart Shopping: AI-Based Product Recommender", layout="wide")
+    st.title("🛒 Smart Shopping: AI-Based Product Recommender")
+    st.markdown("This AI-powered app recommends personalized products based on customer interests and behavior. Select a customer to see what they'd love! 🔍")
+    
     try:
-        customer_df, product_df = load_data()
+        customers_df, products_df = load_data()
     except FileNotFoundError:
-        st.error("🚫 Required data files not found. Make sure `data/customers.csv` and `data/products.csv` exist.")
+        st.error("🚫 Required data files not found. Make sure 'customers.csv' and 'products.csv' are in the same folder as this app.py.")
         return
 
-    with st.sidebar:
-        st.header("👤 Select Customer")
-        customer_ids = customer_df["customer_id"].tolist()
-        selected_id = st.selectbox("Customer ID", customer_ids)
+    customer_names = customers_df['customer_name'].tolist()
+    selected_name = st.selectbox("Choose a Customer", customer_names)
 
-    customer = customer_df[customer_df["customer_id"] == selected_id].iloc[0]
-    customer_profile = customer["interests"]
-    product_descriptions = product_df["description"].tolist()
+    selected_customer = customers_df[customers_df['customer_name'] == selected_name].iloc[0]
+    st.subheader(f"👤 Customer Profile: {selected_customer['customer_name']}")
+    st.write(f"**Age:** {selected_customer['age']}  \n**Gender:** {selected_customer['gender']}  \n**Interests:** {selected_customer['interests']}")
 
-    if st.button("🎯 Recommend Products"):
-        top_indices, scores = recommend_products(customer_profile, product_descriptions)
+    st.subheader("🎯 Recommended Products")
+    recommended = recommend_products(selected_customer, products_df)
 
-        st.subheader("🎁 Top Recommendations")
-        for i, idx in enumerate(top_indices):
-            product = product_df.iloc[idx]
-            with st.container():
-                st.markdown(f"### {i+1}. {product['name']}")
-                st.markdown(f"- 🏷️ **Category:** {product['category']}")
-                st.markdown(f"- 💵 **Price:** ${product['price']}")
-                st.markdown(f"- 📝 **Description:** {product['description']}")
-                st.markdown("---")
-
-    st.markdown("---")
-    st.caption("Created by Gopi Challa | Powered by Streamlit + Scikit-Learn")
+    for _, product in recommended.iterrows():
+        st.markdown(f"### {product['product_name']}")
+        st.write(f"**Category:** {product['category']}  \n**Price:** ${product['price']}  \n**Description:** {product['description']}")
+        st.markdown("---")
 
 if __name__ == "__main__":
     main()
