@@ -16,7 +16,7 @@ Customer_ID,Age,Gender,Location,Browsing_History,Purchase_History,Customer_Segme
 C1000,28,Female,Chennai,"['Books', 'Fashion']","['Biography', 'Jeans']",New Visitor,4806.99,No,Winter
 C1001,27,Male,Delhi,"['Books', 'Fitness', 'Fashion']","['Biography', 'Resistance Bands', 'T-shirt']",Occasional Shopper,795.03,Yes,Autumn
 C1002,34,Other,Chennai,['Electronics'],['Smartphone'],Occasional Shopper,1742.45,Yes,Summer
-"""  # Truncated for brevity; replace with full data or load from file
+"""  # Truncated; replace with full data or load from file
         customers = pd.read_csv(StringIO(customers_data))
 
         # Product Data (from previous interaction)
@@ -56,7 +56,9 @@ P2002,Electronics,Laptop,4833,Brand B,3.5,2.4,0.74,Yes,Spring,Canada,"['Headphon
             'Brand': ['Brand B', 'Brand C'],
             'Probability_of_Recommendation': [0.91, 0.26],
             'Holiday': ['No', 'Yes'],
-            'Season': ['Summer', 'Winter']
+            'Season': ['Summer', 'Winter'],
+            'Average_Rating_of_Similar_Products': [4.2, 4.7],
+            'Customer_Review_Sentiment_Score': [0.26, 0.21]
         }
         return pd.DataFrame(customers_data), pd.DataFrame(products_data)
 
@@ -100,7 +102,7 @@ def plot_spending_analysis(customers_df):
 def main():
     st.set_page_config(page_title="Smart Shopping Hub", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
 
-    # Custom CSS
+    # Custom CSS with Enhanced Colors
     st.markdown("""
     <style>
     .main {background-color: #f0f2f6;}
@@ -108,6 +110,11 @@ def main():
     .product-card {background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .sidebar .sidebar-content {background-color: #ffffff; padding: 15px; border-radius: 10px;}
     .tab {font-size: 18px; font-weight: bold; padding: 10px;}
+    .price {color: #2ecc71; font-weight: bold;} /* Green for price */
+    .score {color: #3498db; font-weight: bold;} /* Blue for recommendation score */
+    .holiday {color: #e74c3c; font-weight: bold;} /* Red for holiday tag */
+    .rating {color: #f39c12; font-weight: bold;} /* Orange for ratings */
+    .label {color: #34495e; font-weight: bold;} /* Dark slate for labels */
     </style>
     """, unsafe_allow_html=True)
 
@@ -143,14 +150,19 @@ def main():
         st.subheader("🎯 Personalized Recommendations")
         recommended = recommend_products(selected_customer, products_df)
         for _, product in recommended.iterrows():
-            holiday_tag = "🎄 Holiday Special" if product['Holiday'] == 'Yes' else ""
+            holiday_tag = '<span class="holiday">🎄 Holiday Special</span>' if product['Holiday'] == 'Yes' else ""
             st.markdown(f"""
             <div class="product-card">
                 <h4>🛒 {product['Subcategory']} (ID: {product['Product_ID']}) {holiday_tag}</h4>
-                <p><b>Category:</b> {product['Category']}</p>
-                <p><b>Price:</b> ${product['Price']}</p>
-                <p><b>Brand:</b> {product['Brand']}</p>
-                <p><b>Recommendation Score:</b> {product['Probability_of_Recommendation']:.2f}</p>
+                <p><span class="label">Category:</span> {product['Category']}</p>
+                <p><span class="label">Price:</span> <span class="price">${product['Price']}</span></p>
+                <p><span class="label">Brand:</span> {product['Brand']}</p>
+                <p><span class="label">Recommendation Score:</span> <span class="score">{product['Probability_of_Recommendation']:.2f}</span></p>
+                <p><span class="label">Avg Rating of Similar Products:</span> <span class="rating">{product['Average_Rating_of_Similar_Products']}/5</span></p>
+                <p><span class="label">Sentiment Score:</span> <span class="rating">{product['Customer_Review_Sentiment_Score']:.2f}</span></p>
+                <p><span class="label">Season:</span> {product['Season']}</p>
+                <p><span class="label">Location:</span> {product['Geographical_Location']}</p>
+                <p><span class="label">Similar Products:</span> {', '.join(product['Similar_Product_List'])}</p>
             </div>
             """, unsafe_allow_html=True)
         if st.button("Download Recommendations"):
@@ -161,15 +173,17 @@ def main():
         st.subheader("👤 Customer Profile")
         with st.expander("View Details", expanded=True):
             st.markdown(f"""
-            **Customer ID:** {selected_customer['Customer_ID']}  
-            **Age:** {selected_customer['Age']}  
-            **Gender:** {selected_customer['Gender']}  
-            **Location:** {selected_customer['Location']}  
-            **Interests:** {', '.join(selected_customer['Browsing_History'])}  
-            **Past Purchases:** {', '.join(selected_customer['Purchase_History'])}  
-            **Segment:** {selected_customer['Customer_Segment']}  
-            **Avg Order Value:** ${selected_customer['Avg_Order_Value']:.2f}
-            """)
+            <p><span class="label">Customer ID:</span> {selected_customer['Customer_ID']}</p>
+            <p><span class="label">Age:</span> {selected_customer['Age']}</p>
+            <p><span class="label">Gender:</span> {selected_customer['Gender']}</p>
+            <p><span class="label">Location:</span> {selected_customer['Location']}</p>
+            <p><span class="label">Interests:</span> {', '.join(selected_customer['Browsing_History'])}</p>
+            <p><span class="label">Past Purchases:</span> {', '.join(selected_customer['Purchase_History'])}</p>
+            <p><span class="label">Segment:</span> {selected_customer['Customer_Segment']}</p>
+            <p><span class="label">Avg Order Value:</span> <span class="price">${selected_customer['Avg_Order_Value']:.2f}</span></p>
+            <p><span class="label">Holiday Shopper:</span> {selected_customer['Holiday']}</p>
+            <p><span class="label">Season:</span> {selected_customer['Season']}</p>
+            """, unsafe_allow_html=True)
 
     with tab3:
         st.subheader("📊 Shopping Insights")
@@ -179,7 +193,10 @@ def main():
             st.plotly_chart(plot_spending_analysis(filtered_customers), use_container_width=True)
         with col2:
             st.plotly_chart(plot_category_interests(filtered_customers), use_container_width=True)
-        st.markdown("**Insight:** Tailored recommendations improve based on your segment and spending habits!")
+        st.markdown("""
+        **Insight:** Your recommendations are tailored based on your interests, past purchases, and shopping behavior. 
+        Check the sentiment scores and ratings to make informed decisions!
+        """)
 
 if __name__ == "__main__":
     main()
