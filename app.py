@@ -29,31 +29,7 @@ P2002,Electronics,Laptop,4833,Brand B,3.5,2.4,0.74,Yes,Spring,Canada,"['Headphon
         return customers, products
     except Exception as e:
         st.error(f"🚫 Data loading error: {str(e)}. Using sample data.")
-        customers_data = {
-            'Customer_ID': ['C1000', 'C1001'],
-            'Age': [28, 27],
-            'Gender': ['Female', 'Male'],
-            'Location': ['Chennai', 'Delhi'],
-            'Browsing_History': [['Books', 'Fashion'], ['Books', 'Fitness']],
-            'Purchase_History': [['Biography', 'Jeans'], ['Biography', 'Resistance Bands']],
-            'Customer_Segment': ['New Visitor', 'Occasional Shopper'],
-            'Avg_Order_Value': [4806.99, 795.03],
-            'Holiday': ['No', 'Yes'],
-            'Season': ['Winter', 'Autumn']
-        }
-        products_data = {
-            'Product_ID': ['P2000', 'P2001'],
-            'Category': ['Fashion', 'Beauty'],
-            'Subcategory': ['Jeans', 'Lipstick'],
-            'Price': [1713, 1232],
-            'Brand': ['Brand B', 'Brand C'],
-            'Probability_of_Recommendation': [0.91, 0.26],
-            'Holiday': ['No', 'Yes'],
-            'Season': ['Summer', 'Winter'],
-            'Average_Rating_of_Similar_Products': [4.2, 4.7],
-            'Customer_Review_Sentiment_Score': [0.26, 0.21]
-        }
-        return pd.DataFrame(customers_data), pd.DataFrame(products_data)
+        return pd.DataFrame(), pd.DataFrame()
 
 def recommend_products(customer, products_df, min_price, max_price):
     interests = set(customer['Browsing_History'] + customer['Purchase_History'])
@@ -78,54 +54,54 @@ def get_sentiment_insight(score):
 
 def plot_segment_distribution(customers_df):
     fig = px.pie(customers_df, names='Customer_Segment', title='Customer Segment Distribution',
-                 color_discrete_sequence=px.colors.sequential.RdBu)
+                 color_discrete_sequence=px.colors.sequential.Greys)
     return fig
 
 def plot_category_interests(customers_df):
     categories = customers_df['Browsing_History'].explode().value_counts()
     fig = px.bar(x=categories.index, y=categories.values, title='Top Product Categories by Interest',
-                 labels={'x': 'Category', 'y': 'Count'}, color=categories.index)
+                 labels={'x': 'Category', 'y': 'Count'}, color_discrete_sequence=px.colors.sequential.Greys)
     return fig
 
 def plot_spending_analysis(customers_df):
     fig = px.histogram(customers_df, x='Avg_Order_Value', nbins=20, title='Average Order Value Distribution',
-                       color_discrete_sequence=['#00CC96'])
+                       color_discrete_sequence=px.colors.sequential.Greys)
     return fig
 
 def plot_customer_spending(customer, customers_df):
-    fig = px.box(customers_df, y='Avg_Order_Value', points="all", title=f"Your Spending vs Others",
-                 hover_data=['Customer_ID'])
-    fig.add_hline(y=customer['Avg_Order_Value'], line_dash="dash", line_color="red", annotation_text="Your Avg Spending")
+    fig = px.box(customers_df, y='Avg_Order_Value', points="all", title="Your Spending vs Others")
+    fig.add_hline(y=customer['Avg_Order_Value'], line_dash="dash", line_color="black", annotation_text="Your Avg Spending")
     return fig
 
 def main():
-    st.set_page_config(page_title="Smart Shopping Hub", page_icon="🛍️", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="Smart Shopping Hub", page_icon="🛍️", layout="wide")
 
     st.markdown("""
     <style>
     .main {background-color: #f8f9fa;}
-    .stButton>button {background-color: #2e86de; color: white; border-radius: 8px; padding: 10px;}
+    .stButton>button {background-color: #333333; color: white; border-radius: 8px; padding: 10px;}
     .product-card {
         background-color: #ffffff;
         padding: 20px;
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         margin-bottom: 20px;
-        border-left: 5px solid #2e86de;
+        border-left: 5px solid #000000;
+        color: #111111;
     }
     .sidebar .sidebar-content {
-        background-color: #f0f0f5;
+        background-color: #e0e0e0;
         padding: 15px;
         border-radius: 10px;
     }
-    .tab {font-size: 18px; font-weight: bold; padding: 10px;}
-    .price {color: #16a085; font-weight: bold;}
-    .score {color: #2c3e50; font-weight: bold;}
-    .holiday {color: #c0392b; font-weight: bold;}
-    .rating {color: #d35400; font-weight: bold;}
-    .label {color: #2c3e50; font-weight: bold;}
-    .insight {color: #8e44ad; font-style: italic;}
-    .detail {color: #34495e; font-weight: normal;}
+    .tab {font-size: 18px; font-weight: bold; padding: 10px; color: #000;}
+    .price {color: #000; font-weight: bold;}
+    .score {color: #111; font-weight: bold;}
+    .holiday {color: #000; font-weight: bold;}
+    .rating {color: #222; font-weight: bold;}
+    .label {color: #000; font-weight: bold;}
+    .insight {color: #555; font-style: italic;}
+    .detail {color: #333; font-weight: normal;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -138,7 +114,7 @@ def main():
     with st.sidebar:
         st.header("🔍 Filters")
         customer_ids = customers_df['Customer_ID'].tolist()
-        selected_id = st.selectbox("Select Customer", customer_ids, key="customer_select")
+        selected_id = st.selectbox("Select Customer", customer_ids)
         location_filter = st.multiselect("Location", customers_df['Location'].unique(), default=customers_df['Location'].unique())
         season_filter = st.multiselect("Season", customers_df['Season'].unique(), default=customers_df['Season'].unique())
         min_price, max_price = st.slider("Price Range ($)", 
@@ -146,7 +122,6 @@ def main():
                                          int(products_df['Price'].max()), 
                                          (int(products_df['Price'].min()), int(products_df['Price'].max())))
         st.markdown("---")
-        st.info("Customize your experience with filters and explore insights!")
 
     filtered_customers = customers_df[
         (customers_df['Location'].isin(location_filter)) &
