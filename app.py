@@ -14,8 +14,8 @@ def load_data():
 # Recommend Products
 # -------------------------------
 def recommend_products(customer, products_df):
-    interests = customer['interests'].split('|')
-    recommendations = products_df[products_df['category'].isin(interests)]
+    interests = customer['Interests'].split('|')
+    recommendations = products_df[products_df['Category'].isin(interests)]
 
     if recommendations.empty:
         recommendations = products_df.sample(3)
@@ -29,30 +29,30 @@ def main():
     st.title("🛍️ Smart Shopping: AI-Based Product Recommender")
     st.markdown("""
         Welcome to **Smart Shopping** – an AI-powered app that delivers personalized product suggestions 
-        based on customer profiles and interests. 
+        based on customer profiles and interests.  
         Select a customer from the dropdown below to explore what products best match their preferences. 🔎
     """)
 
     try:
         customers_df, products_df = load_data()
     except FileNotFoundError:
-        st.error("🚫 Required data files not found. Make sure 'customer_data_collection.csv' and 'product_recommendation_data.csv' are in the same folder as this app.py.")
+        st.error("🚫 Required data files not found. Make sure 'customers.csv' and 'products.csv' are in the same folder as this app.py.")
         return
 
     st.sidebar.header("📋 Choose a Customer")
-    customer_names = customers_df['customer_name'].tolist()
+    customer_names = customers_df['CustomerName'].tolist()
     selected_name = st.sidebar.selectbox("Select Customer", customer_names)
 
-    selected_customer = customers_df[customers_df['customer_name'] == selected_name].iloc[0]
+    selected_customer = customers_df[customers_df['CustomerName'] == selected_name].iloc[0]
 
     col1, col2 = st.columns([1, 3])
     with col1:
         st.subheader("👤 Customer Profile")
         st.markdown(f"""
-        **Name:** {selected_customer['customer_name']}  
-        **Age:** {selected_customer['age']}  
-        **Gender:** {selected_customer['gender']}  
-        **Interests:** {selected_customer['interests'].replace('|', ', ')}
+        **Name:** {selected_customer['CustomerName']}  
+        **Age:** {selected_customer['Age']}  
+        **Gender:** {selected_customer['Gender']}  
+        **Interests:** {selected_customer['Interests'].replace('|', ', ')}
         """)
 
     with col2:
@@ -61,10 +61,10 @@ def main():
 
         for _, product in recommended.iterrows():
             st.markdown(f"""
-            #### 🛒 {product['product_name']}
-            - **Category:** {product['category']}
-            - **Price:** ${product['price']}
-            - **Description:** {product['description']}
+            #### 🛒 {product['ProductName']}
+            - **Category:** {product['Category']}
+            - **Price:** ${product['Price']}
+            - **Description:** {product['Description']}
             ---
             """)
 
