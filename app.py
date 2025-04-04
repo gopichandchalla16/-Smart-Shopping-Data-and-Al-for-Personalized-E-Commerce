@@ -4,7 +4,6 @@ import pandas as pd
 # -------------------------------
 # Load Data
 # -------------------------------
-
 @st.cache_data
 def load_data():
     customers = pd.read_csv("customers.csv")
@@ -14,45 +13,60 @@ def load_data():
 # -------------------------------
 # Recommend Products
 # -------------------------------
-
 def recommend_products(customer, products_df):
     interests = customer['interests'].split('|')
     recommendations = products_df[products_df['category'].isin(interests)]
-    
+
     if recommendations.empty:
         recommendations = products_df.sample(3)
-    
     return recommendations
 
 # -------------------------------
 # Streamlit UI
 # -------------------------------
-
 def main():
     st.set_page_config(page_title="Smart Shopping: AI-Based Product Recommender", layout="wide")
-    st.title("🛒 Smart Shopping: AI-Based Product Recommender")
-    st.markdown("This AI-powered app recommends personalized products based on customer interests and behavior. Select a customer to see what they'd love! 🔍")
-    
+    st.title("🛍️ Smart Shopping: AI-Based Product Recommender")
+    st.markdown("""
+        Welcome to **Smart Shopping** – an AI-powered app that delivers personalized product suggestions 
+        based on customer profiles and interests. 
+        Select a customer from the dropdown below to explore what products best match their preferences. 🔎
+    """)
+
     try:
         customers_df, products_df = load_data()
     except FileNotFoundError:
-        st.error("🚫 Required data files not found. Make sure 'customers.csv' and 'products.csv' are in the same folder as this app.py.")
+        st.error("🚫 Required data files not found. Make sure 'customer_data_collection.csv' and 'product_recommendation_data.csv' are in the same folder as this app.py.")
         return
 
+    st.sidebar.header("📋 Choose a Customer")
     customer_names = customers_df['customer_name'].tolist()
-    selected_name = st.selectbox("Choose a Customer", customer_names)
+    selected_name = st.sidebar.selectbox("Select Customer", customer_names)
 
     selected_customer = customers_df[customers_df['customer_name'] == selected_name].iloc[0]
-    st.subheader(f"👤 Customer Profile: {selected_customer['customer_name']}")
-    st.write(f"**Age:** {selected_customer['age']}  \n**Gender:** {selected_customer['gender']}  \n**Interests:** {selected_customer['interests']}")
 
-    st.subheader("🎯 Recommended Products")
-    recommended = recommend_products(selected_customer, products_df)
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        st.subheader("👤 Customer Profile")
+        st.markdown(f"""
+        **Name:** {selected_customer['customer_name']}  
+        **Age:** {selected_customer['age']}  
+        **Gender:** {selected_customer['gender']}  
+        **Interests:** {selected_customer['interests'].replace('|', ', ')}
+        """)
 
-    for _, product in recommended.iterrows():
-        st.markdown(f"### {product['product_name']}")
-        st.write(f"**Category:** {product['category']}  \n**Price:** ${product['price']}  \n**Description:** {product['description']}")
-        st.markdown("---")
+    with col2:
+        st.subheader("🎯 Personalized Product Recommendations")
+        recommended = recommend_products(selected_customer, products_df)
+
+        for _, product in recommended.iterrows():
+            st.markdown(f"""
+            #### 🛒 {product['product_name']}
+            - **Category:** {product['category']}
+            - **Price:** ${product['price']}
+            - **Description:** {product['description']}
+            ---
+            """)
 
 if __name__ == "__main__":
     main()
