@@ -1,7 +1,7 @@
 streamlit
 pandas
-scikit-learn
+numpy
 sentence-transformers
-faiss-cpu
+scikit-learn
 matplotlib
 seaborn
